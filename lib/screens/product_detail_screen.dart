@@ -154,7 +154,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 Stack(children: [
                   AspectRatio(
                     aspectRatio: 1.1,
-                    child: PlaceholderImage(width: double.infinity, height: double.infinity, borderRadius: BorderRadius.circular(0)),
+                    child: PlaceholderImage(width: double.infinity, height: double.infinity, borderRadius: BorderRadius.circular(0), imageUrl: product.imageUrls.isNotEmpty ? product.imageUrls.first : null),
                   ),
                   Positioned(top: 14, left: 20, child: BadgeRow(labels: product.badges)),
                   Positioned(

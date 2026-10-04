@@ -37,7 +37,7 @@ class ProductCard extends StatelessWidget {
               aspectRatio: 1,
               child: Stack(
                 children: [
-                  const PlaceholderImage(width: double.infinity, height: double.infinity),
+                  PlaceholderImage(width: double.infinity, height: double.infinity, imageUrl: product.imageUrls.isNotEmpty ? product.imageUrls.first : null),
                   Positioned(top: 10, left: 10, child: BadgeRow(labels: product.badges)),
                   Positioned(
                     top: 8,

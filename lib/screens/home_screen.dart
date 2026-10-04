@@ -47,19 +47,29 @@ class _HomeScreenState extends State<HomeScreen> {
     unawaited(context.read<CartProvider>().load());
     unawaited(context.read<CurrencyProvider>().loadRate());
     try {
-      final categories = await CatalogRepository.getCategories();
-      final page = await CatalogRepository.getProducts(pageSize: 12);
-      var reviews = <Review>[];
-      if (page.items.isNotEmpty) {
-        reviews = await ReviewsRepository.getByProduct(page.items.first.id);
-      }
+      // Категории и товары грузим параллельно, а отзывы — уже после показа каталога,
+      // чтобы экран не ждал 3-4 запроса подряд.
+      final results = await Future.wait<Object>([
+        CatalogRepository.getCategories(),
+        CatalogRepository.getProducts(pageSize: 12),
+      ]);
+      final categories = results[0] as List<Category>;
+      final page = results[1] as ProductPage;
       if (!mounted) return;
       setState(() {
         _categories = categories;
         _products = page.items;
-        _reviews = reviews;
         _loading = false;
       });
+      if (page.items.isNotEmpty) {
+        try {
+          final reviews = await ReviewsRepository.getByProduct(page.items.first.id);
+          if (!mounted) return;
+          setState(() => _reviews = reviews);
+        } catch (_) {
+          // отзывы необязательны — каталог уже показан
+        }
+      }
     } catch (_) {
       if (!mounted) return;
       setState(() => _loading = false);

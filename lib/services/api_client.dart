@@ -12,6 +12,10 @@ class ApiClient {
 
   bool _refreshing = false;
 
+  /// Максимальное время ожидания ответа сервера. Без таймаута при плохой сети запрос висит бесконечно,
+  /// и экран навсегда остаётся со спиннером (приложение «зависает»).
+  static const Duration _timeout = Duration(seconds: 15);
+
   Future<Map<String, String>> _headers({required bool auth}) async {
     final headers = <String, String>{'Content-Type': 'application/json', 'Accept': 'application/json'};
     if (auth) {
@@ -33,13 +37,14 @@ class ApiClient {
     final uri = _uri(path, query);
     final headers = await _headers(auth: auth);
     final encodedBody = body == null ? null : jsonEncode(body);
-    return await switch (method) {
+    final Future<http.Response> request = switch (method) {
       'GET' => http.get(uri, headers: headers),
       'POST' => http.post(uri, headers: headers, body: encodedBody),
       'PUT' => http.put(uri, headers: headers, body: encodedBody),
       'DELETE' => http.delete(uri, headers: headers),
       _ => throw ApiException('Неизвестный HTTP-метод: $method'),
     };
+    return await request.timeout(_timeout);
   }
 
   Future<dynamic> get(String path, {Map<String, dynamic>? query, bool auth = true}) =>
@@ -112,7 +117,7 @@ class ApiClient {
         _uri('/auth/refresh'),
         headers: await _headers(auth: false),
         body: jsonEncode({'refreshToken': refreshToken}),
-      );
+      ).timeout(_timeout);
       if (res.statusCode != 200) return false;
 
       final data = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
