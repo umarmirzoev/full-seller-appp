@@ -33,8 +33,9 @@ class ProductCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            AspectRatio(
-              aspectRatio: 1,
+            // Фото занимает всё свободное место над текстом — так карточка никогда не «переполняется»
+            // (жёлто-чёрная полоса overflow) при любой ширине экрана и размере шрифта.
+            Expanded(
               child: Stack(
                 children: [
                   PlaceholderImage(width: double.infinity, height: double.infinity, imageUrl: product.imageUrls.isNotEmpty ? product.imageUrls.first : null),

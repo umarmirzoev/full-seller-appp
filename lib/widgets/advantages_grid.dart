@@ -16,15 +16,19 @@ class AdvantagesGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Высота плитки зависит от размера шрифта в системе — фиксированное соотношение сторон давало overflow.
+    final textScale = MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.6).toDouble();
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 22),
-      child: GridView.count(
-        crossAxisCount: 2,
+      child: GridView(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        childAspectRatio: 2.6,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          mainAxisExtent: 96 * textScale,
+        ),
         children: _items.map((item) {
           return Container(
             padding: const EdgeInsets.all(14),
