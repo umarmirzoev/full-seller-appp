@@ -17,11 +17,17 @@ class OrdersRepository {
     required String addressId,
     required DeliveryCountry country,
     required PaymentMethod paymentMethod,
+    String? contactName,
+    String? comment,
+    NotifyChannel? notifyChannel,
   }) async {
     final data = await ApiClient.instance.post('/orders', body: {
       'addressId': addressId,
       'deliveryCountry': country.index,
       'paymentMethod': paymentMethod.index,
+      'contactName': contactName,
+      'comment': comment,
+      'notifyChannel': notifyChannel?.index,
     }) as Map<String, dynamic>;
     return Order.fromJson(data);
   }

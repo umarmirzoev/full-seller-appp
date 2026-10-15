@@ -6,6 +6,7 @@ class AppRoutes {
   static const onboarding = '/onboarding';
   static const auth = '/auth';
   static const register = '/register';
+  static const forgotPassword = '/forgot-password';
 
   static const home = '/home';
   static const categories = '/categories';
@@ -27,6 +28,7 @@ class AppRoutes {
   static const notifications = '/notifications';
   static const dashboard = '/dashboard';
   static const quickOrder = '/quick-order';
+  static const settings = '/settings';
 
   static const adminDashboard = '/admin';
   static const adminCatalog = '/admin/catalog';

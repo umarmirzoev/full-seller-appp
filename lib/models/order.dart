@@ -14,6 +14,13 @@ extension OrderStatusX on OrderStatus {
       };
 }
 
+/// Куда backend автоматически отправит заказ владельцу. 1:1 с backend OrderNotifyChannel (WhatsApp=0, Telegram=1).
+enum NotifyChannel { whatsapp, telegram }
+
+extension NotifyChannelX on NotifyChannel {
+  String get label => this == NotifyChannel.whatsapp ? 'WhatsApp' : 'Telegram';
+}
+
 /// 1:1 с backend PaymentMethod (Card=0, Invoice=1).
 enum PaymentMethod { card, invoice }
 
@@ -93,7 +100,7 @@ class Order {
         id: json['id'] as String,
         orderNumber: json['orderNumber'] as String,
         status: OrderStatus.values[(json['status'] as num).toInt()],
-        deliveryCountry: DeliveryCountry.values[(json['deliveryCountry'] as num?)?.toInt() ?? 1],
+        deliveryCountry: DeliveryCountry.values[((json['deliveryCountry'] as num?)?.toInt() ?? 1).clamp(0, DeliveryCountry.values.length - 1)],
         paymentMethod: PaymentMethod.values[(json['paymentMethod'] as num?)?.toInt() ?? 0],
         totalAmount: (json['totalAmount'] as num).toDouble(),
         deliveryCost: (json['deliveryCost'] as num?)?.toDouble() ?? 0,

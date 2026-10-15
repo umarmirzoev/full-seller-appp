@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
@@ -63,8 +64,8 @@ class ApiClient {
     http.Response res;
     try {
       res = await _send(method, path, query: query, body: body, auth: auth);
-    } catch (_) {
-      throw const ApiException('Не удалось подключиться к серверу. Проверьте, что backend запущен и доступен.');
+    } catch (e) {
+      throw _networkError(e);
     }
 
     if (res.statusCode == 401 && auth) {
@@ -72,8 +73,8 @@ class ApiClient {
       if (refreshed) {
         try {
           res = await _send(method, path, query: query, body: body, auth: true);
-        } catch (_) {
-          throw const ApiException('Не удалось подключиться к серверу. Проверьте, что backend запущен и доступен.');
+        } catch (e) {
+          throw _networkError(e);
         }
       } else {
         await TokenStorage.clear();
@@ -81,6 +82,21 @@ class ApiClient {
     }
 
     return _parse(res);
+  }
+
+  /// Понятное сообщение о сетевой ошибке (без dart:io, чтобы работало и в web-сборке).
+  ApiException _networkError(Object e) {
+    final type = e.runtimeType.toString();
+    if (e is TimeoutException) {
+      return const ApiException('Сервер не отвечает (таймаут). Проверьте интернет и попробуйте ещё раз.');
+    }
+    if (type.contains('Handshake') || type.contains('Tls') || type.contains('Certificate')) {
+      return const ApiException('Ошибка защищённого соединения. Проверьте дату и время на телефоне и отключите VPN.');
+    }
+    if (type.contains('Socket') || type.contains('ClientException')) {
+      return ApiException('Нет связи с сервером. Проверьте интернет (Wi-Fi или мобильные данные), отключите VPN. [$type]');
+    }
+    return ApiException('Не удалось подключиться к серверу. [$type]');
   }
 
   dynamic _parse(http.Response res) {

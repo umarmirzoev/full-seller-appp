@@ -72,19 +72,16 @@ class _CargoCalculatorScreenState extends State<CargoCalculatorScreen> {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('СТРАНА НАЗНАЧЕНИЯ', style: AppTextStyles.body(size: 11.5, weight: FontWeight.w800, color: AppColors.text3).copyWith(letterSpacing: 0.4)),
             const SizedBox(height: 10),
-            Row(children: DeliveryCountry.values.map((c) {
+            Wrap(spacing: 8, runSpacing: 8, children: DeliveryCountry.values.map((c) {
               final active = c == _country;
-              return Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 10),
-                  child: InkWell(
+              return InkWell(
                     onTap: () {
                       setState(() => _country = c);
                       _calculate();
                     },
                     borderRadius: BorderRadius.circular(AppRadius.md),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: active ? AppColors.primary : AppColors.surface,
@@ -93,9 +90,7 @@ class _CargoCalculatorScreenState extends State<CargoCalculatorScreen> {
                       ),
                       child: Text(c.label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: active ? Colors.white : AppColors.text2)),
                     ),
-                  ),
-                ),
-              );
+                  );
             }).toList()),
             const SizedBox(height: 22),
             Text('ВЕС ГРУЗА, КГ', style: AppTextStyles.body(size: 11.5, weight: FontWeight.w800, color: AppColors.text3).copyWith(letterSpacing: 0.4)),

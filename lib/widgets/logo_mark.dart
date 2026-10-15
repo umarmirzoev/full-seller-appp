@@ -13,15 +13,16 @@ class LogoMark extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 34,
-          height: 34,
+          width: 38,
+          height: 38,
+          padding: const EdgeInsets.all(5),
           decoration: BoxDecoration(
-            gradient: AppColors.brandGradient,
-            borderRadius: BorderRadius.circular(11),
-            boxShadow: [BoxShadow(color: AppColors.g500.withOpacity(0.35), blurRadius: 10, offset: const Offset(0, 4))],
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.borderSoft),
+            boxShadow: [BoxShadow(color: AppColors.g500.withValues(alpha: 0.18), blurRadius: 10, offset: const Offset(0, 4))],
           ),
-          alignment: Alignment.center,
-          child: Text('FS', style: AppTextStyles.display(size: 13, weight: FontWeight.w800, color: Colors.white)),
+          child: Image.asset('assets/logo/fs_logo.png', fit: BoxFit.contain, filterQuality: FilterQuality.high),
         ),
         if (withText) ...[
           const SizedBox(width: 9),

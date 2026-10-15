@@ -1,12 +1,13 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import '../data/countries.dart';
 import '../routes/app_routes.dart';
 import '../services/api_exception.dart';
 import '../services/auth_repository.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
-import '../widgets/logo_mark.dart';
+import '../widgets/auth_ui.dart';
 
+/// Вход: страна + номер телефона и пароль.
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
 
@@ -15,20 +16,27 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  final _phoneController = TextEditingController(text: '+992 ');
-  final _codeController = TextEditingController();
-  bool _codeSent = false;
+  final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController();
+  Country _country = kDefaultCountry;
   bool _loading = false;
   String? _error;
 
-  void _showError(String message) {
-    setState(() => _error = message);
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
-  Future<void> _sendCode() async {
-    final phone = _phoneController.text.trim();
-    if (phone.length < 6) {
-      _showError('Введите корректный номер телефона');
+  Future<void> _login() async {
+    FocusScope.of(context).unfocus();
+    if (!PhoneInput.isValid(_phoneController.text)) {
+      setState(() => _error = 'Введите корректный номер телефона');
+      return;
+    }
+    if (_passwordController.text.isEmpty) {
+      setState(() => _error = 'Введите пароль');
       return;
     }
     setState(() {
@@ -36,128 +44,105 @@ class _AuthScreenState extends State<AuthScreen> {
       _error = null;
     });
     try {
-      await AuthRepository.requestOtp(phone);
-      if (!mounted) return;
-      setState(() {
-        _codeSent = true;
-        _loading = false;
-      });
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      setState(() => _loading = false);
-      _showError(e.message);
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _loading = false);
-      _showError('Не удалось отправить код. Попробуйте ещё раз.');
-    }
-  }
-
-  Future<void> _confirm() async {
-    final code = _codeController.text.trim();
-    if (code.isEmpty) {
-      _showError('Введите код из SMS');
-      return;
-    }
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    try {
-      await AuthRepository.confirmOtp(_phoneController.text.trim(), code);
+      await AuthRepository.login(PhoneInput.compose(_country, _phoneController.text), _passwordController.text);
       if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (route) => false);
     } on ApiException catch (e) {
       if (!mounted) return;
-      setState(() => _loading = false);
-      _showError(e.message);
+      setState(() {
+        _loading = false;
+        _error = e.isUnauthorized ? 'Неверный номер или пароль' : e.message;
+      });
     } catch (_) {
       if (!mounted) return;
-      setState(() => _loading = false);
-      _showError('Не удалось войти. Попробуйте ещё раз.');
+      setState(() {
+        _loading = false;
+        _error = 'Не удалось войти. Попробуйте ещё раз.';
+      });
     }
   }
+
+  void _forgot() => Navigator.pushNamed(context, AppRoutes.forgotPassword, arguments: {
+        'country': _country,
+        'phone': _phoneController.text,
+      });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const LogoMark(),
-            const SizedBox(height: 32),
-            Text(_codeSent ? 'Введите код' : 'Вход в аккаунт', style: AppTextStyles.display(size: 24)),
-            const SizedBox(height: 8),
-            Text(
-              _codeSent ? 'Мы отправили SMS с кодом на ${_phoneController.text}' : 'Введите номер телефона — пришлём код подтверждения',
-              style: AppTextStyles.body(size: 13.5, weight: FontWeight.w600, color: AppColors.text2),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(color: const Color(0xFFFDECEC), borderRadius: BorderRadius.circular(12)),
-                child: Text(_error!, style: AppTextStyles.body(size: 12.5, weight: FontWeight.w600, color: const Color(0xFFD64545))),
-              ),
-            ],
-            const SizedBox(height: 28),
-            if (!_codeSent) ...[
-              Text('НОМЕР ТЕЛЕФОНА', style: AppTextStyles.body(size: 12, weight: FontWeight.w700, color: AppColors.text3).copyWith(letterSpacing: 0.4)),
-              const SizedBox(height: 8),
-              TextField(controller: _phoneController, keyboardType: TextInputType.phone, enabled: !_loading),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _loading ? null : _sendCode,
-                child: _loading
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white))
-                    : const Text('Получить код'),
-              ),
-            ] else ...[
-              TextField(
-                controller: _codeController,
-                keyboardType: TextInputType.number,
-                textAlign: TextAlign.center,
-                enabled: !_loading,
-                style: AppTextStyles.mono(size: 22),
-                decoration: const InputDecoration(hintText: '— — — —'),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _loading ? null : _confirm,
-                child: _loading
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white))
-                    : const Text('Войти'),
-              ),
-              const SizedBox(height: 12),
-              Center(
-                child: TextButton(
-                  onPressed: _loading ? null : () => setState(() {
-                        _codeSent = false;
-                        _error = null;
-                      }),
-                  child: const Text('Изменить номер'),
-                ),
-              ),
-            ],
-            const SizedBox(height: 28),
-            Center(
-              child: RichText(
-                text: TextSpan(
-                  style: AppTextStyles.body(size: 13, weight: FontWeight.w600, color: AppColors.text2),
-                  children: [
-                    const TextSpan(text: 'Нет аккаунта? '),
-                    TextSpan(
-                      text: 'Зарегистрироваться',
-                      style: const TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.w800),
-                      recognizer: (TapGestureRecognizer()..onTap = () => Navigator.pushNamed(context, AppRoutes.register)),
+      body: AuthBackdrop(
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(22, 18, 22, 28),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 440),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  const Reveal(child: Align(alignment: Alignment.centerLeft, child: AuthBrand())),
+                  const SizedBox(height: 26),
+                  const Reveal(
+                    delayMs: 80,
+                    child: AuthHero(
+                      icon: Icons.lock_rounded,
+                      title: 'С возвращением!',
+                      subtitle: 'Войдите по номеру телефона и паролю',
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 28),
+                  AuthErrorBox(_error),
+                  Reveal(
+                    delayMs: 160,
+                    child: PhoneInput(
+                      controller: _phoneController,
+                      country: _country,
+                      onCountry: (c) => setState(() => _country = c),
+                      enabled: !_loading,
+                      action: TextInputAction.next,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Reveal(
+                    delayMs: 230,
+                    child: AuthPasswordField(
+                      controller: _passwordController,
+                      enabled: !_loading,
+                      action: TextInputAction.done,
+                      onSubmitted: (_) => _login(),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Reveal(
+                    delayMs: 280,
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: HoverScale(
+                        onTap: _loading ? null : _forgot,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                          child: Text('Забыли пароль?', style: AppTextStyles.body(size: 13.5, weight: FontWeight.w800, color: AppColors.g600)),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Reveal(
+                    delayMs: 330,
+                    child: GlowButton(text: 'Войти', icon: Icons.login_rounded, loading: _loading, onPressed: _login),
+                  ),
+                  const SizedBox(height: 22),
+                  Reveal(
+                    delayMs: 400,
+                    child: AuthLinkCard(
+                      icon: Icons.person_add_alt_1_rounded,
+                      top: 'Нет аккаунта?',
+                      bottom: 'Зарегистрироваться за 30 секунд',
+                      onTap: () => Navigator.pushNamed(context, AppRoutes.register),
+                    ),
+                  ),
+                ]),
               ),
             ),
-          ]),
+          ),
         ),
       ),
     );
