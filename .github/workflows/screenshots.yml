@@ -1,7 +1,11 @@
 name: App Store screenshots
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      device:
+        description: 'Simulator name regex'
+        default: 'iPhone [0-9]+ Pro Max'
 
 jobs:
   shots:
@@ -22,7 +26,7 @@ jobs:
         id: sim
         run: |
           xcrun simctl list devices available
-          UDID=$(xcrun simctl list devices available | grep -E "iPhone [0-9]+ Pro Max" | tail -1 | grep -oE "[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}")
+          UDID=$(xcrun simctl list devices available | grep -E "${{ github.event.inputs.device || 'iPhone [0-9]+ Pro Max' }}" | tail -1 | grep -oE "[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}")
           echo "UDID=$UDID"
           xcrun simctl boot "$UDID" || true
           xcrun simctl bootstatus "$UDID" -b
