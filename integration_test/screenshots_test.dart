@@ -13,21 +13,31 @@ void main() {
   testWidgets('store screenshots', (tester) async {
     await binding.convertFlutterSurfaceToImage();
     app.main();
-    await tester.pump(const Duration(seconds: 8));
+    for (var i = 0; i < 56; i++) {
+      await tester.pump(const Duration(milliseconds: 250));
+    }
 
-    Future<void> shot(String name, {int seconds = 5}) async {
-      await tester.pump(Duration(seconds: seconds));
+    Future<void> settle(int seconds) async {
+      for (var i = 0; i < seconds * 4; i++) {
+        await tester.pump(const Duration(milliseconds: 250));
+      }
+    }
+
+    Future<void> shot(String name, {int seconds = 10}) async {
+      await settle(seconds);
+      await binding.takeScreenshot('tmp'); // первый кадр может быть устаревшим
+      await settle(2);
       await binding.takeScreenshot(name);
     }
 
     NavigatorState nav() => tester.state<NavigatorState>(find.byType(Navigator).first);
 
-    await shot('01_login', seconds: 2);
+    await shot('01_login', seconds: 3);
 
     await AuthRepository.login(_phone, _password);
 
     nav().pushNamedAndRemoveUntil('/home', (_) => false);
-    await shot('02_home', seconds: 7);
+    await shot('02_home', seconds: 14);
 
     nav().pushNamed('/categories');
     await shot('03_categories');

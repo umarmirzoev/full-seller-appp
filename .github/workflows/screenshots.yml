@@ -47,5 +47,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fullseller-screenshots
-          path: screenshots/*.png
+          path: screenshots/0*.png
           if-no-files-found: warn
